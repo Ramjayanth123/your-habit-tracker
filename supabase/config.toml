@@ -1,0 +1,3 @@
+project_id = "vifzngzvcpbyncchfcoa"
+const SUPABASE_URL = "https://vifzngzvcpbyncchfcoa.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZnpuZ3p2Y3BieW5jY2hmY29hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2MTY2NDksImV4cCI6MjA2MjE5MjY0OX0.Hj1Gqczvq4mzRPs4TfqdHQ1OO5CwuvW9kE6AGBF8SKA";

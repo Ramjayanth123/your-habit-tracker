@@ -1,0 +1,331 @@
+import React, { useState, useMemo } from 'react';
+import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO, isAfter, differenceInDays } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Check, Calendar, Trophy, Trash2, X, Pencil, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
+import { useHabits } from '@/contexts/HabitContext';
+import { Habit } from '@/types/habit';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import EditHabitForm from './EditHabitForm';
+
+interface HabitCardProps {
+  habit: Habit;
+}
+
+const HabitCard: React.FC<HabitCardProps> = ({ habit }) => {
+  const { toggleHabitCompletion, deleteHabit, getCompletionTimestamp } = useHabits();
+  const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  // Generate array of dates for current week view
+  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
+
+  const previousWeek = () => setCurrentWeekStart(addDays(currentWeekStart, -7));
+  const nextWeek = () => setCurrentWeekStart(addDays(currentWeekStart, 7));
+  const goToCurrentWeek = () => setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+
+  const handleToggleDay = (date: Date) => {
+    if (isAfter(date, new Date())) return; // Prevent future date selection
+    toggleHabitCompletion(habit.id, date.toISOString().split('T')[0]);
+  };
+
+  const isDateCompleted = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    return habit.completedDates.includes(dateString);
+  };
+
+  const isToday = (date: Date) => isSameDay(date, new Date());
+
+  const isTargetDay = (date: Date) => {
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+    return habit.targetDays.includes(dayName);
+  };
+
+  const startDateObj = parseISO(habit.startDate);
+  const isAfterStartDate = (date: Date) => date >= startDateObj;
+  const isFutureDate = (date: Date) => isAfter(date, new Date());
+
+  const getDateStatus = (date: Date) => {
+    if (isFutureDate(date)) return 'future';
+    if (isDateCompleted(date)) return 'completed';
+    if (isTargetDay(date)) return 'missed';
+    return 'inactive';
+  };
+
+  const getCompletionTime = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const timestamp = getCompletionTimestamp(habit.id, dateString);
+    if (!timestamp) return null;
+    return format(parseISO(timestamp), 'h:mm a');
+  };
+
+  // Calculate completion percentage for the current week
+  const completionPercentage = useMemo(() => {
+    const currentWeekDays = weekDates.filter(date => 
+      habit.targetDays.includes(date.toLocaleDateString('en-US', { weekday: 'long' })) &&
+      !isFutureDate(date) &&
+      isAfterStartDate(date)
+    );
+    
+    if (currentWeekDays.length === 0) return 0;
+    
+    const completedDays = currentWeekDays.filter(date => isDateCompleted(date)).length;
+    return Math.round((completedDays / currentWeekDays.length) * 100);
+  }, [weekDates, habit]);
+
+  // Calculate days since habit started
+  const daysSinceStart = differenceInDays(new Date(), parseISO(habit.startDate));
+
+  return (
+    <Card className="w-full mb-6 overflow-hidden transition-all hover:shadow-lg">
+      <CardHeader className="pb-3 border-b">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-xl font-semibold text-foreground">{habit.name}</CardTitle>
+              {habit.streak > 2 && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Flame className="h-3.5 w-3.5 text-orange-500" />
+                  {habit.streak} day{habit.streak !== 1 ? 's' : ''}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5 mr-1.5" />
+              <span>Started {format(parseISO(habit.startDate), 'MMM d, yyyy')}</span>
+              <span className="mx-2">•</span>
+              <span>{daysSinceStart} day{daysSinceStart !== 1 ? 's' : ''} tracking</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {habit.targetDays.map((day) => (
+                <Badge 
+                  key={day} 
+                  variant="secondary" 
+                  className="text-xs font-medium px-2 py-0.5 bg-primary/5 text-primary"
+                >
+                  {day.substring(0, 3)}
+                </Badge>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-1.5">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              onClick={() => setIsEditDialogOpen(true)}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              <span className="sr-only">Edit</span>
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span className="sr-only">Delete</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <Trash2 className="h-5 w-5 text-destructive" />
+                    Delete Habit
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete <span className="font-medium text-foreground">"{habit.name}"</span>? 
+                    This will permanently delete all your progress and cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => deleteHabit(habit.id)} 
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    Delete Habit
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="py-4">
+        {/* Weekly Progress Bar */}
+        <div className="mb-4 space-y-1.5">
+          <div className="flex justify-between text-sm font-medium text-muted-foreground mb-1">
+            <span>Weekly Progress</span>
+            <span>{completionPercentage}%</span>
+          </div>
+          <Progress value={completionPercentage} className="h-2" />
+        </div>
+
+        {/* Week Navigation */}
+        <div className="flex items-center justify-between mb-4 px-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={previousWeek}
+            className="h-8 w-8 p-0 rounded-full"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Previous week</span>
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={goToCurrentWeek}
+            className="text-sm font-medium px-3 h-8"
+          >
+            {format(currentWeekStart, 'MMM d')} - {format(endOfWeek(currentWeekStart, { weekStartsOn: 1 }), 'MMM d, yyyy')}
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={nextWeek}
+            className="h-8 w-8 p-0 rounded-full"
+          >
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Next week</span>
+          </Button>
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7 gap-1.5">
+          {weekDates.map((date) => {
+            const dayLabel = format(date, 'EEE')[0];
+            const dayNumber = format(date, 'd');
+            const isActive = isAfterStartDate(date);
+            const status = getDateStatus(date);
+            const completionTime = getCompletionTime(date);
+            const isTarget = isTargetDay(date);
+            
+            return (
+              <TooltipProvider key={date.toString()}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex flex-col items-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!isActive || isFutureDate(date) || !isTarget}
+                        onClick={() => handleToggleDay(date)}
+                        className={cn(
+                          'relative h-10 w-10 p-0 rounded-full flex flex-col items-center justify-center transition-all',
+                          'hover:bg-accent hover:text-accent-foreground',
+                          status === 'completed' && 'bg-green-500/10 hover:bg-green-500/20',
+                          status === 'missed' && 'bg-destructive/5 hover:bg-destructive/10',
+                          isToday(date) && 'ring-2 ring-primary',
+                          (!isActive || isFutureDate(date) || !isTarget) && 'opacity-50',
+                          !isTarget && 'bg-transparent'
+                        )}
+                      >
+                        <span className={cn(
+                          'text-xs font-medium mt-0.5',
+                          status === 'completed' && 'text-green-600 dark:text-green-400',
+                          status === 'missed' && 'text-destructive',
+                          (!isActive || !isTarget) && 'text-muted-foreground'
+                        )}>
+                          {dayLabel}
+                        </span>
+                        <span className={cn(
+                          'text-sm font-medium',
+                          status === 'completed' && 'text-green-600 dark:text-green-400 font-semibold',
+                          status === 'missed' && 'text-destructive',
+                          (!isActive || !isTarget) && 'text-muted-foreground',
+                          isToday(date) && 'font-bold'
+                        )}>
+                          {dayNumber}
+                        </span>
+                        {status === 'completed' && (
+                          <div className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-green-500 border-2 border-background" />
+                        )}
+                      </Button>
+                      {completionTime && (
+                        <span className="text-[10px] text-muted-foreground mt-1">
+                          {completionTime}
+                        </span>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="flex items-center gap-1.5">
+                    <div className="text-center">
+                      <p className="font-medium">{format(date, 'EEEE, MMMM d, yyyy')}</p>
+                      {completionTime ? (
+                        <div className="flex items-center justify-center gap-1.5 text-green-600 dark:text-green-400 text-sm">
+                          <Check className="h-3.5 w-3.5" />
+                          <span>Completed at {completionTime}</span>
+                        </div>
+                      ) : isTarget ? (
+                        <div className="flex items-center justify-center gap-1.5 text-destructive text-sm">
+                          <X className="h-3.5 w-3.5" />
+                          <span>Not completed</span>
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground text-sm">
+                          Not a target day
+                        </div>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          })}
+        </div>
+      </CardContent>
+      <CardFooter className="flex flex-col sm:flex-row justify-between items-center pt-4 border-t gap-3">
+        <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-50 dark:bg-yellow-900/30 rounded-full text-yellow-700 dark:text-yellow-400">
+            <Trophy className="h-3.5 w-3.5" />
+            <span>Highest: {habit.highestStreak} day{habit.highestStreak !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {habit.streak > 0 ? (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 dark:bg-green-900/30 rounded-full text-green-700 dark:text-green-400 text-sm font-medium">
+              <Flame className="h-3.5 w-3.5" />
+              <span>Current streak: {habit.streak} day{habit.streak !== 1 ? 's' : ''}</span>
+            </div>
+          ) : (
+            <div className="text-muted-foreground text-sm">
+              No active streak
+            </div>
+          )}
+        </div>
+      </CardFooter>
+      <EditHabitForm
+        habit={habit}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+      />
+    </Card>
+  );
+};
+
+export default HabitCard;
