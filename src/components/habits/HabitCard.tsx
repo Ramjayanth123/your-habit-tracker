@@ -112,7 +112,7 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit }) => {
 
   return (
     <Card className="w-full mb-6 overflow-hidden transition-all hover:shadow-lg bg-card/50 backdrop-blur-sm">
-      <CardHeader className="pb-3 border-b">
+      <CardHeader className="pb-3 border-b flex flex-row justify-between items-start">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <CardTitle className="text-xl font-semibold text-foreground">{habit.name}</CardTitle>
@@ -137,7 +137,7 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit }) => {
             <span>Created {format(new Date(habit.created_at || habit.startDate), 'MMM d, yyyy')}</span>
           </div>
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 mt-1">
           <Button 
             variant="outline" 
             size="sm" 
