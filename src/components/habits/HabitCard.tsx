@@ -112,85 +112,74 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit }) => {
 
   return (
     <Card className="w-full mb-6 overflow-hidden transition-all hover:shadow-lg bg-card/50 backdrop-blur-sm">
-      <CardHeader className="py-4 px-5 border-b bg-gradient-to-r from-card to-card/80">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-          <div className="space-y-2.5">
-            <div className="flex items-center gap-3">
-              <CardTitle className="text-xl font-semibold text-foreground">{habit.name}</CardTitle>
-              {habit.streak > 2 && (
-                <Badge variant="secondary" className="flex items-center gap-1.5 px-2.5 py-1">
-                  <Flame className="h-4 w-4 text-orange-500" />
-                  {habit.streak} day{habit.streak !== 1 ? 's' : ''}
-                </Badge>
-              )}
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4 mr-2" />
-                <span>Started {format(parseISO(habit.startDate), 'MMM d, yyyy')}</span>
-                <span className="mx-3">•</span>
-                <span>{daysSinceStart} day{daysSinceStart !== 1 ? 's' : ''} tracking</span>
-              </div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <span>Created {format(new Date(habit.created_at || habit.startDate), 'MMM d, yyyy')}</span>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 mt-2.5">
-              {habit.targetDays.map((day) => (
-                <Badge 
-                  key={day} 
-                  variant="secondary" 
-                  className="text-xs font-medium px-3 py-1 bg-primary/5 text-primary"
-                >
-                  {day.substring(0, 3)}
-                </Badge>
-              ))}
-            </div>
+      <CardHeader className="pb-3 border-b">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-xl font-semibold text-foreground">{habit.name}</CardTitle>
+            {habit.streak > 2 && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Flame className="h-3.5 w-3.5 text-orange-500" />
+                {habit.streak} day{habit.streak !== 1 ? 's' : ''}
+              </Badge>
+            )}
           </div>
-          <div className="flex gap-1.5">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-8 w-8 p-0" 
-              onClick={() => setIsEditDialogOpen(true)}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              <span className="sr-only">Edit</span>
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span className="sr-only">Delete</span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2">
-                    <Trash2 className="h-5 w-5 text-destructive" />
-                    Delete Habit
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete <span className="font-medium text-foreground">"{habit.name}"</span>? 
-                    This will permanently delete all your progress and cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={() => deleteHabit(habit.id)} 
-                    className="bg-destructive hover:bg-destructive/90"
-                  >
-                    Delete Habit
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          {/* Habit ID badge */}
+          <div className="mb-1">
+            <span className="inline-block bg-[#23263a] text-[#b5b8e3] text-xs font-mono px-2 py-0.5 rounded-full">ID: {habit.id.slice(0, 6)}</span>
           </div>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5 mr-1.5" />
+            <span>Started {format(parseISO(habit.startDate), 'MMM d, yyyy')}</span>
+            <span className="mx-2">•</span>
+            <span>{daysSinceStart} day{daysSinceStart !== 1 ? 's' : ''} tracking</span>
+          </div>
+          <div className="flex items-center text-xs text-muted-foreground">
+            <span>Created {format(new Date(habit.created_at || habit.startDate), 'MMM d, yyyy')}</span>
+          </div>
+        </div>
+        <div className="flex gap-1.5">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-8 w-8 p-0" 
+            onClick={() => setIsEditDialogOpen(true)}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            <span className="sr-only">Edit</span>
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span className="sr-only">Delete</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <Trash2 className="h-5 w-5 text-destructive" />
+                  Delete Habit
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete <span className="font-medium text-foreground">"{habit.name}"</span>? 
+                  This will permanently delete all your progress and cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={() => deleteHabit(habit.id)} 
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  Delete Habit
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardHeader>
       <CardContent className="py-4">
