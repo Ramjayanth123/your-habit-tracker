@@ -136,6 +136,20 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit }) => {
           <div className="flex items-center text-xs text-muted-foreground">
             <span>Created {format(new Date(habit.created_at || habit.startDate), 'MMM d, yyyy')}</span>
           </div>
+          {/* Target days badges */}
+          {habit.targetDays && habit.targetDays.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {habit.targetDays.map((day) => (
+                <Badge
+                  key={day}
+                  variant="secondary"
+                  className="text-xs font-medium px-3 py-1 bg-primary/5 text-primary"
+                >
+                  {day.substring(0, 3)}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex gap-1.5 mt-1">
           <Button 
