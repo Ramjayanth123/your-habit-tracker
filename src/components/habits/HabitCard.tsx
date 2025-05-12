@@ -292,11 +292,22 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit }) => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>{format(date, 'EEEE, MMMM d, yyyy')}</p>
-                    {status === 'completed' && completionTime && (
-                      <p>Completed at {completionTime}</p>
-                    )}
-                    {status === 'missed' && (
-                      <p>Missed target day</p>
+                    {status === 'completed' ? (
+                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-sm">
+                        <Check className="h-3.5 w-3.5" />
+                        <span>
+                          {completionTime ? `Completed at ${completionTime}` : 'Completed'}
+                        </span>
+                      </div>
+                    ) : status === 'missed' ? (
+                      <div className="flex items-center gap-1.5 text-destructive text-sm">
+                        <X className="h-3.5 w-3.5" />
+                        <span>Not completed</span>
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground text-sm">
+                        Not a target day
+                      </div>
                     )}
                   </TooltipContent>
                 </Tooltip>
